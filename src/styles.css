@@ -1,1 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  --tetris-color-empty: #f8f8f8;
+  --tetris-color-O: #ffd600; /* yellow */
+  --tetris-color-I: #00bcd4; /* cyan */
+  --tetris-color-S: #66bb6a; /* green */
+  --tetris-color-Z: #ef5350; /* red */
+  --tetris-color-L: #ff9800; /* orange */
+  --tetris-color-J: #3f51b5; /* blue */
+  --tetris-color-T: #ab47bc; /* purple */
+
+  --cell-size: calc(90vh / 20); /* Adjust based on your board size */
+
+}

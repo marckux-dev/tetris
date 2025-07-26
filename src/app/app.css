@@ -1,0 +1,26 @@
+.tetris-root {
+  display: flex;
+  flex-direction: row;
+  justify-content: stretch;
+  gap: 1rem;
+}
+
+.side-panel {
+  flex: 1;
+  display: flex;
+}
+
+.side-panel.left-panel {
+  justify-content: flex-end;
+}
+
+.side-panel.right-panel {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.center-panel {
+
+}
+
+

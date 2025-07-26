@@ -1,0 +1,15 @@
+<div class="board">
+  @for (row of grid()(); let rowIndex = $index; track rowIndex) {
+    <div class="row">
+      @for (cell of row; let colIndex = $index; track colIndex) {
+        <div
+          class="cell"
+          [class.empty]="cell === 0"
+          [class.filled]="cell !== 0"
+          [attr.data-value]="cell"
+        >
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,27 @@
+.board {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.row {
+  display: flex;
+  flex: 1;
+}
+
+.cell {
+  width: var(--cell-size);
+  aspect-ratio: 1 / 1;
+  border: 1px solid #ccc;
+  background: #f8f8f8;
+}
+
+.cell.filled[data-value="1"] { background: var(--tetris-color-O); } /* O */
+.cell.filled[data-value="2"] { background: var(--tetris-color-I); } /* I */
+.cell.filled[data-value="3"] { background: var(--tetris-color-S); } /* S */
+.cell.filled[data-value="4"] { background: var(--tetris-color-Z); } /* Z */
+.cell.filled[data-value="5"] { background: var(--tetris-color-L); } /* L */
+.cell.filled[data-value="6"] { background: var(--tetris-color-J); } /* J */
+.cell.filled[data-value="7"] { background: var(--tetris-color-T); } /* T */
+
