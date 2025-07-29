@@ -15,3 +15,30 @@ Un sencillo juego de Tetris implementado en Angular utilizando Signals para la r
 - Diseño responsivo con CSS y Flexbox.
 - Estilo retro usando colores vibrantes y tipografía de estilo arcade.
 
+## Instalación
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/marckux-dev/tetris.git
+    cd tetris
+    ```
+2. Instala las dependencias:
+  ```bash
+   npm install
+   ```
+3. Inicia el servidor de desarrollo:
+   ```bash
+    ng serve
+    ```
+4. Abre tu navegador y visita `http://localhost:4200/`.
+
+# Uso
+- Usa las flechas del teclado para mover las piezas:
+  - **Izquierda**: Mover pieza a la izquierda.
+  - **Derecha**: Mover pieza a la derecha.
+  - **Arriba**: Rotar pieza.
+  - **Abajo**: Acelerar caída de la pieza.
+  - **Enter**: Empezar o reanudar el juego.
+  - **Escape**: Reiniciar el juego.
+
+# Licencia
+MIT License 2025 marckux-dev
