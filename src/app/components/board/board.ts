@@ -1,5 +1,5 @@
 import {Component, input, Signal} from '@angular/core';
-import {TetrisColor} from '../../models/tetris-color';
+import {TetrisGrid} from '../../models/tetris-grid';
 
 @Component({
   selector: 'app-board',
@@ -9,5 +9,5 @@ import {TetrisColor} from '../../models/tetris-color';
 })
 
 export class Board {
-  grid = input.required<Signal<TetrisColor[][]>>();
+  grid = input.required<TetrisGrid>();
 }

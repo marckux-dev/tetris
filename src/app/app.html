@@ -1,14 +1,26 @@
 <div class="tetris-root">
   <div class="side-panel left-panel">
-    <p> This is the left panel</p>
+   <div class="max-score-container">
+     <app-score-box label="MAX SCORE" [score]="highScore()" [digits]="4"/>
+   </div>
   </div>
   <div class="center-panel" tabindex="0" (keydown)="onKeyDown($event)">
-    <app-board [grid]="mainGrid" />
+    <app-board [grid]="mainGrid()" />
   </div>
   <div class="side-panel right-panel">
     <div class="next-container">
+      <app-score-box label="SCORE" [score]="currentScore()" />
       <h2>NEXT</h2>
-      <app-board [grid]="nextPieceGrid" />
+      <app-board [grid]="nextPieceGrid()" />
+      <app-score-box label="LEVEL" [score]="currentLevel()" [digits]="2"/>
     </div>
   </div>
 </div>
+@if (isGameOver()) {
+  <div class="game-over-overlay">
+    <div class="game-over-box">
+      <h2>GAME OVER</h2>
+      <p>Press ENTER to START</p>
+    </div>
+  </div>
+}

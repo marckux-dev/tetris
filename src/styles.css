@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 :root {
   --tetris-color-empty: #f8f8f8;
   --tetris-color-O: #ffd600; /* yellow */
@@ -12,3 +13,9 @@
   --cell-size: calc(90vh / 20); /* Adjust based on your board size */
 
 }
+
+body {
+  font-family: 'Press Start 2P', monospace;
+}
+
+

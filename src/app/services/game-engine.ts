@@ -1,4 +1,4 @@
-import {Injectable, signal, WritableSignal} from '@angular/core';
+import {effect, Injectable, signal, WritableSignal} from '@angular/core';
 import {TetrisColor} from '../models/tetris-color';
 import {TetrisBoard} from '../models/tetris-board';
 import {PieceType, TetrisPiece} from '../models/tetris-piece';
@@ -18,12 +18,19 @@ export class GameEngine {
   private currentPiece: TetrisPiece | null = null;
   private timerFPS = new Date().getTime();
   private timerUPS = new Date().getTime();
+  private QUEUE_SIZE = 20; // Size of the piece queue
   private dropInterval = 1000; // Time in milliseconds before the piece drops down one row
+
 
   /*
     * The game board is a 2D array of TetrisColor, representing the current state of the game.
    */
   private gameBoard: TetrisBoard = TetrisBoard.createEmptyBoard(this.NROWS, this.NCOLS);
+
+  private loadHighScore(): number {
+    const storedHighScore = localStorage.getItem('highScore');
+    return storedHighScore? parseInt(storedHighScore, 10) : 0;
+  }
 
   /*
     * The renderedBoard is a signal that holds the current state of the game board.
@@ -32,12 +39,35 @@ export class GameEngine {
    */
   public renderedBoard: WritableSignal<TetrisBoard> = signal(TetrisBoard.createEmptyBoard(this.NROWS, this.NCOLS));
   public nextPieceBoard: WritableSignal<TetrisBoard> = signal(TetrisBoard.createEmptyBoard(4, 4)); // Placeholder for next piece display
+  public currentScore: WritableSignal<number> = signal(0); // Current score of the game
+  public highScore: WritableSignal<number> = signal(this.loadHighScore()); // Maximum score
+  public level: WritableSignal<number> = signal(1);
+  public isGameOver: WritableSignal<boolean> = signal(false);
+
+
+  private persistHighStorage =  effect(
+    () => {
+      const score = this.currentScore();
+      const highScore = this.highScore();
+      if (score > highScore) {
+        this.highScore.update(() => score);
+        localStorage.setItem('highScore', score.toString());
+      }
+    }
+  );
 
   public start() {
     // Initialize the game board
     this.gameBoard = TetrisBoard.createEmptyBoard(this.NROWS, this.NCOLS);
     this.pieceQueue = this.createPieceQueue();
     this.isRunning = true;
+    this.currentPiece = null; // Reset the current piece
+    this.timerFPS = Date.now();
+    this.timerUPS = Date.now();
+    this.dropInterval = 1000; // Reset drop interval
+    this.level.set(1);
+    this.currentScore.set(0);
+    this.isGameOver.set(false);
     this.gameLoop();
   }
 
@@ -54,7 +84,7 @@ export class GameEngine {
     };
     const pieces: TetrisPiece[] = [];
     const pieceTypes = Object.values(PieceType);
-    for (let i = 0; i < 100; i++) { // Create a queue of 100 pieces
+    for (let i = 0; i < this.QUEUE_SIZE; i++) { // Create a queue
       const randomValue = Math.random();
       for (const pieceType of pieceTypes) {
         if (randomValue <= cumulativeProbabilities[pieceType]) {
@@ -83,13 +113,18 @@ export class GameEngine {
 
     // Check if there is a current piece, if not, get the next piece from the queue
     if (!this.currentPiece) {
-      if (this.pieceQueue.length > 0) {
-        this.currentPiece = this.pieceQueue.shift()!;
-        const nextPiece = this.pieceQueue[0].moved(0, 0);
-        this.nextPieceBoard.update(() => TetrisBoard.createEmptyBoard(4,4).addPiece(nextPiece) );
-      } else {
-        // If no pieces are left in the queue, stop the game
-        this.stop();
+      this.currentPiece = this.pieceQueue.shift()!;
+      if (this.pieceQueue.length === 0) {
+        this.pieceQueue = this.createPieceQueue();
+        this.increaseLevel();
+      }
+      const nextPiece = this.pieceQueue[0];
+      const pos = nextPiece.grid[0][0] === TetrisColor.I? 0 : 1
+      this.nextPieceBoard.set(TetrisBoard.createEmptyBoard(4, 4).addPiece(this.pieceQueue[0].moved(1, pos)));
+      this.timerFPS = Date.now();
+      if (this.currentPiece.collide(this.gameBoard)) {
+        this.isGameOver.set(true);
+        this.isRunning = false;
         return;
       }
     }
@@ -99,7 +134,14 @@ export class GameEngine {
     }
   }
 
+  private increaseLevel() {
+    this.level.update(level => level + 1);
+    this.dropInterval = Math.max(1000 - (this.level() - 1) * 100, 100); // Decrease drop interval with each level, minimum 200ms
+    console.log(`Level increased to ${this.level()}. Drop interval is now ${this.dropInterval}ms.`);
+  }
+
   public dropPiece() {
+    if (!this.isRunning) return;
     if (!this.currentPiece) return;
     const newPiece = this.currentPiece.moved(this.currentPiece.rowPos + 1, this.currentPiece.colPos);
     if (newPiece.collide(this.gameBoard)) {
@@ -115,20 +157,23 @@ export class GameEngine {
   public removeCompletedRows() {
     // Check for completed rows and remove them
     const completedRows: number[] = [];
-    for (let row = 0; row < this.gameBoard.nrows; row++) {
-      if (this.gameBoard.grid.grid[row].every(color => color !== TetrisColor.Empty)) {
+    for (let row = 0; row < this.gameBoard.nRows; row++) {
+      if (this.gameBoard.grid[row].every(color => color !== TetrisColor.Empty)) {
         completedRows.push(row);
       }
     }
 
     if (completedRows.length > 0) {
       // Remove completed rows and shift the remaining rows down
-      const newGrid = this.gameBoard.grid.clone();
+      const newGrid = this.gameBoard.grid.slice();
       for (const row of completedRows) {
-        newGrid.grid.splice(row, 1); // Remove the completed row
-        newGrid.grid.unshift(Array(this.gameBoard.ncols).fill(TetrisColor.Empty)); // Add an empty row at the top
+        newGrid.splice(row, 1); // Remove the completed row
+        newGrid.unshift(Array(this.gameBoard.nCols).fill(TetrisColor.Empty)); // Add an empty row at the top
       }
       this.gameBoard = new TetrisBoard(newGrid);
+      // Update the score based on the number of rows removed
+      const scoreIncrement = Math.pow(2, completedRows.length - 1); // Example scoring system
+      this.currentScore.update(score => score + scoreIncrement);
     }
   }
 
@@ -151,24 +196,26 @@ export class GameEngine {
   public rotateCurrentPiece() {
     if (!this.currentPiece) return;
     const newPiece = this.currentPiece.rotated();
-    if (!newPiece.collide(this.gameBoard)) {
-      this.currentPiece = newPiece;
+    const kicks = [0, -1, 1, -2, 2, -3, 3]; // Tetris kick offsets for rotation
+    for (const kick of kicks) {
+      const adjustedPiece = newPiece.moved(newPiece.rowPos, newPiece.colPos + kick);
+      if (!adjustedPiece.collide(this.gameBoard)) {
+        this.currentPiece = adjustedPiece;
+        return; // Exit after a successful rotation
+      }
     }
   }
 
   public render() {
-    // Update the rendered board signal with the current game board state
-    if (this.currentPiece) {
-      // If there is a current piece, add it to the game board
-      const newBoard = this.gameBoard.addPiece(this.currentPiece);
-      this.renderedBoard.set(newBoard);
-    } else {
-      this.renderedBoard.set(this.gameBoard);
+    const newBoard = this.currentPiece ? this.gameBoard.addPiece(this.currentPiece) : this.gameBoard;
+    if (!this.renderedBoard().equals(newBoard)) {
+      this.renderedBoard.update(() => newBoard);
     }
   }
 
   public stop() {
     this.isRunning = false;
+    this.isGameOver.set(true);
   }
 
 }

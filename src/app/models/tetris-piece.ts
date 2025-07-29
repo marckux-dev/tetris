@@ -28,63 +28,54 @@ const PIECES: Record<PieceType, Piece> = {
 }
 
 export class TetrisPiece {
-  private _grid: TetrisGrid;
-  private _rowPos: number = 0;
-  private _colPos: number = 0;
 
-  constructor(grid: TetrisGrid, rowPos: number, colPos: number) {
-    this._grid = grid;
-    this._rowPos = rowPos;
-    this._colPos = colPos;
-  }
+  constructor(
+    public readonly grid: TetrisGrid,
+    public readonly rowPos: number,
+    public readonly colPos: number
+  ){}
 
   public static create(pieceType: PieceType, rowPos: number, colPos: number): TetrisPiece {
     const { shape, color } = PIECES[pieceType];
-    return new TetrisPiece(TetrisGrid.create(shape, color), rowPos, colPos);
+    const grid: TetrisGrid = shape.map(row => row.map(cell => cell ? color : TetrisColor.Empty));
+    return new TetrisPiece(grid, rowPos, colPos);
   }
 
-  public get rowPos(): number {
-    return this._rowPos;
+  public get nRows(): number {
+    return this.grid.length;
   }
 
-  public get colPos(): number {
-    return this._colPos;
-  }
-
-  public get grid(): TetrisGrid {
-    return this._grid;
+  public get nCols(): number {
+    return this.grid[0].length;
   }
 
   public collide(board: TetrisBoard): boolean {
-    const [rowPos, colPos] = [this._rowPos, this._colPos];
+    const [rowPos, colPos] = [this.rowPos, this.colPos];
     if (
       colPos < 0 ||
-      colPos + this._grid.ncols > board.ncols ||
-      rowPos + this._grid.nrows > board.nrows
+      colPos + this.nCols > board.nCols ||
+      rowPos + this.nRows > board.nRows
     )
       return true;
-    const shape = this._grid.shape;
-    const boardShape = board.grid.shape;
-    for (let i = 0; i < shape.length; i++) {
-      for (let j = 0; j < shape[0].length; j++) {
-        if (shape[i][j] && boardShape[i + rowPos][j + colPos]) return true;
-      }
-    }
-    return false;
+    return this.grid.some(
+      (row, r) => row.some(
+        (cell, c) => cell !== TetrisColor.Empty
+          && rowPos + r >= 0
+          && board.grid[rowPos + r][colPos + c] !== TetrisColor.Empty
+      )
+    );
   }
 
   moved(rowPos: number, colPos: number) {
-    const newPiece = new TetrisPiece(this._grid, rowPos, colPos);
+    const newPiece = new TetrisPiece(this.grid, rowPos, colPos);
     return newPiece;
   }
 
   rotated(): TetrisPiece {
-    const bottomRow = this._rowPos + this._grid.nrows - 1;
-    const newGrid = this._grid.rotated();
-    const newRowPos = bottomRow - newGrid.nrows + 1;
-    return new TetrisPiece(this._grid.rotated(), newRowPos, this._colPos);
+    const bottomRow = this.rowPos + this.nRows - 1;
+    const newGrid = this.grid[0].map((_, colIndex) => this.grid.map(row => row[colIndex])).reverse();
+    const newRowPos = bottomRow - newGrid.length + 1;
+    return new TetrisPiece(newGrid, newRowPos, this.colPos);
   }
-
-
 }
 

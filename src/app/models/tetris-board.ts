@@ -1,49 +1,57 @@
 import {TetrisGrid} from './tetris-grid';
 import {TetrisPiece} from './tetris-piece';
+import {TetrisColor} from './tetris-color';
 
 export class TetrisBoard {
-  private _grid: TetrisGrid;
 
-  constructor(grid: TetrisGrid) {
-    this._grid = grid;
+  constructor(
+    public readonly grid: TetrisGrid
+  ) {}
+
+  public static createEmptyBoard(nRows: number, nCols:number): TetrisBoard {
+    const emptyGrid: TetrisGrid = Array.from({ length: nRows }, () => Array(nCols).fill(0));
+    return new TetrisBoard(emptyGrid);
   }
 
-  public static createEmptyBoard(nrows: number, ncols:number): TetrisBoard {
-    return new TetrisBoard(TetrisGrid.createEmpty(nrows, ncols));
+  public get nRows(): number {
+    return this.grid.length;
   }
 
-  public clone(): TetrisBoard {
-    return new TetrisBoard(this.grid.clone());
-  }
-
-  public get grid(): TetrisGrid {
-    return this._grid;
-  }
-
-  public get nrows() {
-    return this._grid.nrows;
-  }
-
-  public get ncols() {
-    return this._grid.ncols;
+  public get nCols(): number {
+    return this.grid[0].length;
   }
 
   public addPiece(newPiece: TetrisPiece): TetrisBoard {
     if (newPiece.collide(this)) {
       throw new Error('Piece collides with the board');
     }
-    const newGrid = this.grid.clone();
-    const [rowPos, colPos] = [newPiece.rowPos, newPiece.colPos];
-    for (let row = 0; row < newPiece.grid.nrows; row++) {
-      for (let col = 0; col < newPiece.grid.ncols; col++) {
-        const color = newPiece.grid.getColor(row, col);
-        if (color !== 0) { // Assuming 0 is the empty color
-          newGrid.setColor(rowPos + row, colPos + col, color);
+    const newGrid = this.grid.map(row => [...row]);
+    for (let r = 0; r < newPiece.nRows; r++) {
+      for (let c = 0; c < newPiece.nCols; c++) {
+        const gridPosRow = newPiece.rowPos + r;
+        const gridPosCol = newPiece.colPos + c;
+        if (gridPosRow >= 0) {
+          if (newPiece.grid[r][c] !== TetrisColor.Empty) {
+            newGrid[gridPosRow][gridPosCol] = newPiece.grid[r][c];
+          }
         }
       }
     }
     return new TetrisBoard(newGrid);
   }
 
+  public equals(other: TetrisBoard): boolean {
+    if (this.nRows !== other.nRows || this.nCols !== other.nCols) {
+      return false;
+    }
+    for (let r = 0; r < this.nRows; r++) {
+      for (let c = 0; c < this.nCols; c++) {
+        if (this.grid[r][c] !== other.grid[r][c]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
 }
